@@ -58,6 +58,40 @@ def main():
 
     trainingTestingDataList = buildTrainingTestData(.40,.60)
 
+    trainingSpambaseData = trainingTestingDataList[0]
+    testingSpambaseData = trainingTestingDataList[1]
+
+    # calculate priors for each class.
+    trainingSpamPrior = (trainingSpambaseData.iloc[: -1] == 1).sum() / len(trainingSpambaseData)
+    trainingHamPrior = (trainingSpambaseData.iloc[: -1] == 0).sum() / len(trainingSpambaseData)
+
+    # calculates the mean for each feature within the training data
+    trainingSpambaseMeans = trainingSpambaseData.loc[:, :, -1].mean()
+    trainingSpambaseStds = trainingSpambaseData.loc[:, :, -1].std()
+
+    # replace 0 with a small number for underflow and prevent division by zero
+    trainingSpambaseMeans.replace(0, 0.0001)
+    trainingSpambaseStds.replace(0, 0.0001)
+
+    testingSpamPrior = (testingSpambaseData.iloc[: -1] == 1).sum() / len(testingSpambaseData)
+    testingHamPrior = (testingSpambaseData.iloc[: -1] == 0).sum() / len(testingSpambaseData)
+
+    # calculates the mean std for each feature within the testing data
+    testingSpambaseMeans = testingSpambaseData.loc[:, :, -1].mean()
+    testingSpambasStds = testingSpambaseData.loc[:, :, -1].std()
+
+    # replace 0 with a small number for underflow and prevent division by zero
+    testingSpambaseMeans.replace(0, 0.0001)
+    testingSpambasStds.replace(0, 0.0001)
+
+
+
+
+
+
+
+
+
 
 main()
 
