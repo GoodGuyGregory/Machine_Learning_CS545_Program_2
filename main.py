@@ -1,6 +1,20 @@
 import pandas as pd
 
 
+class NaiveBayesEmailClassifier:
+    def __int__(self, trainingData, testingData):
+        self.trainingDataSet = trainingData
+        self.testingDataSet = testingData
+        # training spambase class priors
+        self.trainingSpamClassPrior = self.determineClassPrior(self.trainingDataSet, 1)
+        self.trainingHamClassPrior = self.determineClassPrior(self.trainingDataSet, 0)
+
+    #  supply a 0 for ham and 1 for spam
+    def determineClassPrior(self, dataSet, predictedClass):
+        return (dataSet.iloc[: -1] == predictedClass).sum() / len(dataSet)
+
+    def
+    def determineClassFeature
 
 # build 2300 instances of spam and ham
 # split 40% spam 60% ham
