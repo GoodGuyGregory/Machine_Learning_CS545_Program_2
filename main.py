@@ -127,10 +127,19 @@ def buildTrainingTestData(spamSplit, hamSplit):
     # return the data from split
     return trainingTestingDfs
 
-def perpareTestData(testingData):
+def prepareTestData(testingData):
+    testInputLabels = []
+
     # split the testing features from the label.
+    inputFeatures = testingData.iloc[:, :-1]
 
     # pull classifications and for comparison.
+    inputTargets = testingData.iloc[:, -1]
+
+    return inputFeatures, inputTargets
+
+
+
 
 
 
@@ -145,8 +154,7 @@ def main():
 
 
     #  split target and features for testing.
-
-    sanitizeTestData(testingSpambaseData)
+    inputFeature, inputTargets = prepareTestData(testingSpambaseData)
 
 
 
