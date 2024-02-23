@@ -20,6 +20,11 @@ class NaiveBayesEmailClassifier:
 
         self.determineClassFeatureMeansStds(trainingData)
 
+        # performance metrics:
+        self.correctlyClassifiedEmails = 0
+        self.totalEmailsClassified = 0
+
+
     #  supply a 0 for ham and 1 for spam
     def determineClassPrior(self, dataSet, targetClass):
         return ((dataSet.iloc[:, -1] == targetClass).sum()) / len(dataSet)
@@ -38,12 +43,11 @@ class NaiveBayesEmailClassifier:
         foundHamsStd = foundHam.iloc[:, :-1].std(axis=0)
 
         # replace 0 with a small number for underflow and prevent division by zero
-        foundSpamsMean.replace(0, 0.0001)
-        foundSpamsStd.replace(0, 0.0001)
+        # inplace=True swaps the current df without need for reassignment of the df
 
+        foundSpamsStd.replace(0.0, 0.0001, inplace=True)
 
-        foundHamsMean.replace(0, 0.0001)
-        foundHamsStd.replace(0, 0.0001)
+        foundHamsStd.replace(0.0, 0.0001, inplace=True)
 
         self.spamsMean = np.array(foundSpamsMean.to_list())
         self.spamsStd = np.array(foundSpamsStd.to_list())
@@ -51,31 +55,43 @@ class NaiveBayesEmailClassifier:
         self.hamsMean = np.array(foundHamsMean.to_list())
         self.hamsStd = np.array(foundHamsStd.to_list())
 
-    def classifyEmail(self, emailFeatures):
-        # adds a posteriors list
-        posteriors = []
-
-        # classify ham
-        hamPosterior = np.sum(np.log(self.gaussianNB(emailFeatures, self.hamsMean, self.hamsStd))) + self.trainingHamClassPrior
-        posteriors.append(hamPosterior)
-
-        # classify spam
-        spamPosterior = np.sum(np.log(self.gaussianNB(emailFeatures, self.spamsMean, self.spamsStd))) + self.trainingSpamClassPrior
-        posteriors.append(spamPosterior)
+    def classifyEmails(self, emailFeatures, emailTargets):
 
 
-        return np.argmax(posteriors, axis=0)
+        for email in range(len(emailFeatures)):
+            self.totalEmailsClassified += 1
+            emailFeatureVector = emailFeatures[email]
+            # adds a posteriors list
+            posteriors = []
+
+            # classify ham
+            hamPosterior = np.sum(np.log(self.gaussianNB(emailFeatureVector, self.hamsMean, self.hamsStd)) + np.log(self.trainingHamClassPrior))
+            posteriors.append(hamPosterior)
+
+            # classify spam
+            spamPosterior = np.sum(np.log(self.gaussianNB(emailFeatureVector, self.spamsMean, self.spamsStd)) + np.log(self.trainingSpamClassPrior))
+            posteriors.append(spamPosterior)
+
+            prediction = np.argmax(posteriors, axis=0)
+
+            if prediction == emailTargets[email]:
+                self.correctlyClassifiedEmails += 1
 
     def coefficientEFraction(self, classStd):
-        return 1 / math.sqrt(2 * math.pi * classStd)
+        return 1 / np.sqrt((2 * np.pi) * classStd )
 
-    def exponentialEFractionTerm(self, featureVector, classMean, classStd):
-        classMean = np.exp(classMean)
-        classStd = np.exp(classStd)
-        return ((featureVector - classMean) ** 2) / (2 * (classStd ** 2))
 
-    def gaussianNB(self, emailFeatures, classMean, classStd):
-        return self.coefficientEFraction(classStd) * (math.e ** (-1 * self.exponentialEFractionTerm(emailFeatures, classMean, classStd)))
+    def exponentialFractionTerm(self, featureVector, classMean, classStd):
+        eps = 1e-4
+        return (((featureVector - classMean) ** 2) / (2 * (classStd ** 2) + eps))
+
+    def gaussianNB(self, emailFeatureVector, classMean, classStd):
+        result = self.coefficientEFraction(classStd) * (np.exp(-1 * self.exponentialFractionTerm(emailFeatureVector, classMean, classStd)))
+        return result
+
+    def determineAccuracy(self):
+        print(self.totalEmailsClassified)
+        return self.correctlyClassifiedEmails / self.totalEmailsClassified * 100
 
 # build 2300 instances of spam and ham
 # split 40% spam 60% ham
@@ -118,23 +134,19 @@ def buildTrainingTestData(spamSplit, hamSplit):
     spambase = spambase[~spambase.index.isin(testingHams.index)]
 
     testing_spambase = pd.concat([testingHams, testingSpams])
-    # return both dataframes
-    trainingTestingDfs = []
-
-    trainingTestingDfs.append(training_spambase)
-    trainingTestingDfs.append(testing_spambase)
 
     # return the data from split
-    return trainingTestingDfs
+    return training_spambase, testing_spambase
 
 def prepareTestData(testingData):
-    testInputLabels = []
+    # shuffle the test data.
+    testingData = testingData.sample(frac=1)
 
     # split the testing features from the label.
-    inputFeatures = testingData.iloc[:, :-1]
+    inputFeatures = np.array(testingData.iloc[:, :-1])
 
     # pull classifications and for comparison.
-    inputTargets = testingData.iloc[:, -1]
+    inputTargets = np.array(testingData.iloc[:, -1].to_list())
 
     return inputFeatures, inputTargets
 
@@ -145,16 +157,17 @@ def prepareTestData(testingData):
 
 def main():
 
-    trainingTestingDataList = buildTrainingTestData(.40,.60)
-
-    trainingSpambaseData = trainingTestingDataList[0]
-    testingSpambaseData = trainingTestingDataList[1]
+    trainingSpambaseData, testingSpambaseData = buildTrainingTestData(.40,.60)
 
     emailClassifier = NaiveBayesEmailClassifier(trainingSpambaseData)
 
 
     #  split target and features for testing.
     inputFeature, inputTargets = prepareTestData(testingSpambaseData)
+
+    emailClassifier.classifyEmails(inputFeature, inputTargets)
+
+    print(emailClassifier.determineAccuracy())
 
 
 
