@@ -5,7 +5,8 @@
 
 it's important to note that `np.exp()` uses the *e* constant value. for it's base in the exponent.
 
-True Positive, False Positve etc [Explaination](https://www.youtube.com/watch?v=2LnvcMlc5EE) for any possible confusion 
+True Positive, False Positve etc [Explaination](https://www.youtube.com/watch?v=2LnvcMlc5EE) for any possible confusion. To calculate all of these 
+see page 23 in the *Machine Learning Stephan Marshland* text for this course
 
 **Resources**
 
