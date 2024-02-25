@@ -21,8 +21,12 @@ class NaiveBayesEmailClassifier:
         self.determineClassFeatureMeansStds(trainingData)
 
         # performance metrics:
-        self.correctlyClassifiedEmails = 0
         self.totalEmailsClassified = 0
+
+        self.truePositives = 0
+        self.trueNegatives = 0
+        self.falsePositives = 0
+        self.falseNegatives = 0
 
 
     #  supply a 0 for ham and 1 for spam
@@ -61,6 +65,7 @@ class NaiveBayesEmailClassifier:
         for email in range(len(emailFeatures)):
             self.totalEmailsClassified += 1
             emailFeatureVector = emailFeatures[email]
+            targetClass = emailTargets[email]
             # adds a posteriors list
             posteriors = []
 
@@ -74,8 +79,25 @@ class NaiveBayesEmailClassifier:
 
             prediction = np.argmax(posteriors, axis=0)
 
-            if prediction == emailTargets[email]:
-                self.correctlyClassifiedEmails += 1
+            if prediction == targetClass:
+                # classify prediction for accuracy metrics:
+                # case where the target is classified as spam
+                # case where the email is correctly classified as spam
+                if prediction == 1 and targetClass == 1:
+                    self.truePositives += 1
+                # case where classified as not spam and is non-spam
+                if prediction == 0 and targetClass == 0:
+                    self.trueNegatives += 1
+            # case where it wasn't correctly predicted.
+            else:
+                # case where the email is falsely classified as spam
+                if prediction == 1 and targetClass == 0:
+                    self.falsePositives += 1
+                # case where classified as non spam but is spam email
+                if prediction == 0 and targetClass == 1:
+                    self.falseNegatives += 1
+
+
 
     def coefficientEFraction(self, classStd):
         return 1 / np.sqrt((2 * np.pi) * classStd )
@@ -90,8 +112,30 @@ class NaiveBayesEmailClassifier:
         return result
 
     def determineAccuracy(self):
-        print(self.totalEmailsClassified)
-        return self.correctlyClassifiedEmails / self.totalEmailsClassified * 100
+        print("Accuracy Results:")
+        print("====================================")
+        print("Out of " + str(self.totalEmailsClassified) + " emails:")
+        accuracy = (self.truePositives + self.trueNegatives) / (self.truePositives + self.falsePositives + self.trueNegatives + self.falseNegatives) * 100
+        print( "Accuracy of : " + str(round(accuracy,2)) + "%")
+        print("====================================")
+
+    def determinePrecision(self):
+        print("Precision Results:")
+        print("====================================")
+        print("Out of " + str(self.totalEmailsClassified) + " emails:")
+        precision = (self.truePositives) / (self.truePositives + self.falsePositives) * 100
+        print("Precison of : " + str(round(precision, 2)))
+        print("====================================")
+
+    def determineRecall(self):
+        print("Recall Results:")
+        print("====================================")
+        print("Out of " + str(self.totalEmailsClassified) + " emails:")
+        recall = (self.truePositives) / (self.truePositives + self.falseNegatives) * 100
+        print("Recall of : " + str(round(recall, 2)))
+        print("====================================")
+
+
 
 # build 2300 instances of spam and ham
 # split 40% spam 60% ham
@@ -167,7 +211,9 @@ def main():
 
     emailClassifier.classifyEmails(inputFeature, inputTargets)
 
-    print(emailClassifier.determineAccuracy())
+    emailClassifier.determineAccuracy()
+    emailClassifier.determinePrecision()
+    emailClassifier.determineRecall()
 
 
 
