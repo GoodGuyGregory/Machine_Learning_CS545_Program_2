@@ -5,6 +5,7 @@
 
 it's important to note that `np.exp()` uses the *e* constant value. for it's base in the exponent.
 
+True Positive, False Positve etc [Explaination](https://www.youtube.com/watch?v=2LnvcMlc5EE) for any possible confusion 
 
 **Resources**
 
