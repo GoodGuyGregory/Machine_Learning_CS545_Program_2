@@ -1,10 +1,16 @@
 import pandas as pd
 import numpy as np
-import math
+# used for confusion matrix metric
+from sklearn.metrics import confusion_matrix
+# used for building and displaying the confusion matrix
+import matplotlib.pyplot as plt
+# used for displaying the heatmap properties for the confusion matrix
+import seaborn as sns
 
 
 class NaiveBayesEmailClassifier:
     def __init__(self, trainingData):
+
         self.trainingDataSet = trainingData
 
         # training spambase class priors
@@ -27,6 +33,8 @@ class NaiveBayesEmailClassifier:
         self.trueNegatives = 0
         self.falsePositives = 0
         self.falseNegatives = 0
+
+        self.confusionMatrix = None
 
 
     #  supply a 0 for ham and 1 for spam
@@ -60,7 +68,7 @@ class NaiveBayesEmailClassifier:
         self.hamsStd = np.array(foundHamsStd.to_list())
 
     def classifyEmails(self, emailFeatures, emailTargets):
-
+        predictedValues = []
 
         for email in range(len(emailFeatures)):
             self.totalEmailsClassified += 1
@@ -79,6 +87,8 @@ class NaiveBayesEmailClassifier:
 
             prediction = np.argmax(posteriors, axis=0)
 
+            predictedValues.append(prediction)
+
             if prediction == targetClass:
                 # classify prediction for accuracy metrics:
                 # case where the target is classified as spam
@@ -96,6 +106,8 @@ class NaiveBayesEmailClassifier:
                 # case where classified as non spam but is spam email
                 if prediction == 0 and targetClass == 1:
                     self.falseNegatives += 1
+
+        self.confusionMatrix = confusion_matrix(emailTargets, predictedValues)
 
 
 
@@ -134,6 +146,18 @@ class NaiveBayesEmailClassifier:
         recall = (self.truePositives) / (self.truePositives + self.falseNegatives) * 100
         print("Recall of : " + str(round(recall, 2)))
         print("====================================")
+
+    def displayConfusionMatrix(self):
+
+        if len(self.confusionMatrix) > 0:
+            labels = ['Not Spam', 'Spam']
+            sns.heatmap(self.confusionMatrix, annot=True, fmt='d', cmap='Greens', xticklabels=labels, yticklabels=labels)
+            plt.xlabel('Predicted')
+            plt.ylabel('Actual')
+            plt.title('Confusion Matrix')
+            plt.show()
+        else:
+            return "run a classification in order to display a confusion matrix"
 
 
 
@@ -214,6 +238,15 @@ def main():
     emailClassifier.determineAccuracy()
     emailClassifier.determinePrecision()
     emailClassifier.determineRecall()
+
+    emailClassifier.displayConfusionMatrix()
+
+    # used for visual correlation inspection of the data.
+    # determine correlation for the features:
+    correlationMatrix = testingSpambaseData.corr()
+    # display.max_columns lets all of the 57 features be displayed.
+    pd.set_option('display.max_columns', None)
+    print(correlationMatrix.head())
 
 
 
